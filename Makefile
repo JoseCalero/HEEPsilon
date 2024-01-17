@@ -30,7 +30,7 @@ mcu-gen:
 	python util/mcu_gen.py --cfg mcu_cfg.hjson --pads_cfg pad_cfg.hjson --outdir ../../../tb/ --memorybanks $(MEMORY_BANKS) --memorybanks_il $(MEMORY_BANKS_IL) --bus NtoM --tpl-sv ../../../tb/tb_util.svh.tpl
 
 ## Builds (synthesis and implementation) the bitstream for the FPGA version using Vivado
-## @param FPGA_BOARD=nexys-a7-100t,pynq-z2
+## @param FPGA_BOARD=nexys-a7-100t,pynq-z2,zcu104
 ## @param FUSESOC_FLAGS=--flag=<flagname>
 vivado-fpga: |venv
 	fusesoc --cores-root . run --no-export --target=$(FPGA_BOARD) $(FUSESOC_FLAGS) --setup --build eslepfl:systems:cgra-x-heep 2>&1 | tee buildvivado.log
