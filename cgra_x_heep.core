@@ -136,7 +136,7 @@ filesets:
 
   xdc-fpga-pynq-z2:
     files:
-    - hw/fpga_cgra/constraints/pin_assign.xdc
+    - hw/fpga_cgra/constraints/pynq-z2/pin_assign.xdc
     file_type: xdc
   
   xdc-fpga-zcu104:
