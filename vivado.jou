@@ -2,8 +2,8 @@
 # Vivado v2022.1 (64-bit)
 # SW Build 3526262 on Mon Apr 18 15:47:01 MDT 2022
 # IP Build 3524634 on Mon Apr 18 20:55:01 MDT 2022
-# Start of session at: Fri Dec 15 15:45:07 2023
-# Process ID: 113980
+# Start of session at: Thu Jan 25 17:43:40 2024
+# Process ID: 42039
 # Current directory: /home/mbelda/epfl/my_cgra/HEEPsilon
 # Command line: vivado
 # Log file: /home/mbelda/epfl/my_cgra/HEEPsilon/vivado.log
@@ -11,5 +11,42 @@
 # Running On: mbelda, OS: Linux, CPU Frequency: 2000.000 MHz, CPU Physical cores: 4, Host memory: 16453 MB
 #-----------------------------------------------------------
 start_gui
-open_project /home/mbelda/epfl/my_cgra/HEEPsilon/build/eslepfl_systems_cgra-x-heep_0/pynq-z2-vivado/eslepfl_systems_cgra-x-heep_0.xpr
-open_run impl_1
+open_hw_manager
+connect_hw_server -allow_non_jtag
+disconnect_hw_server localhost:3121
+connect_hw_server -allow_non_jtag
+open_hw_target
+current_hw_device [get_hw_devices xczu7_0]
+refresh_hw_device -update_hw_probes false [lindex [get_hw_devices xczu7_0] 0]
+current_hw_device [get_hw_devices arm_dap_1]
+refresh_hw_device -update_hw_probes false [lindex [get_hw_devices arm_dap_1] 0]
+current_hw_device [get_hw_devices xczu7_0]
+set_property PROBES.FILE {} [get_hw_devices xczu7_0]
+set_property FULL_PROBES.FILE {} [get_hw_devices xczu7_0]
+set_property PROGRAM.FILE {/home/mbelda/epfl/my_cgra/HEEPsilon/build/eslepfl_systems_cgra-x-heep_0/zcu104-vivado/eslepfl_systems_cgra-x-heep_0.bit} [get_hw_devices xczu7_0]
+program_hw_devices [get_hw_devices xczu7_0]
+refresh_hw_device [lindex [get_hw_devices xczu7_0] 0]
+set_property PROBES.FILE {} [get_hw_devices xczu7_0]
+set_property FULL_PROBES.FILE {} [get_hw_devices xczu7_0]
+set_property PROGRAM.FILE {/home/mbelda/epfl/my_cgra/HEEPsilon/build/eslepfl_systems_cgra-x-heep_0/zcu104-vivado/eslepfl_systems_cgra-x-heep_0.bit} [get_hw_devices xczu7_0]
+program_hw_devices [get_hw_devices xczu7_0]
+refresh_hw_device [lindex [get_hw_devices xczu7_0] 0]
+close_hw_target {localhost:3121/xilinx_tcf/Xilinx/94418A}
+refresh_hw_server {localhost:3121}
+open_hw_target {localhost:3121/xilinx_tcf/Xilinx/1234-tulA}
+current_hw_device [get_hw_devices xc7z020_1]
+refresh_hw_device -update_hw_probes false [lindex [get_hw_devices xc7z020_1] 0]
+set_property PROBES.FILE {} [get_hw_devices xc7z020_1]
+set_property FULL_PROBES.FILE {} [get_hw_devices xc7z020_1]
+set_property PROGRAM.FILE {/home/mbelda/epfl/my_cgra/HEEPsilon/build/eslepfl_systems_cgra-x-heep_0/pynq-z2-vivado-10mb/eslepfl_systems_cgra-x-heep_0.bit} [get_hw_devices xc7z020_1]
+program_hw_devices [get_hw_devices xc7z020_1]
+refresh_hw_device [lindex [get_hw_devices xc7z020_1] 0]
+disconnect_hw_server localhost:3121
+connect_hw_server -allow_non_jtag
+open_hw_target
+set_property PROGRAM.FILE {/home/mbelda/epfl/my_cgra/HEEPsilon/build/eslepfl_systems_cgra-x-heep_0/zcu104-vivado/eslepfl_systems_cgra-x-heep_0.bit} [get_hw_devices xczu7_0]
+current_hw_device [get_hw_devices xczu7_0]
+refresh_hw_device -update_hw_probes false [lindex [get_hw_devices xczu7_0] 0]
+current_hw_device [get_hw_devices arm_dap_1]
+refresh_hw_device -update_hw_probes false [lindex [get_hw_devices arm_dap_1] 0]
+current_hw_device [get_hw_devices xczu7_0]

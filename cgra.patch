@@ -1,0 +1,797 @@
+diff --git a/cgra_x_heep.core b/cgra_x_heep.core
+index dc8777a..97d605b 100644
+--- a/cgra_x_heep.core
++++ b/cgra_x_heep.core
+@@ -27,7 +27,6 @@ filesets:
+     - hw/vendor/esl_epfl_x_heep/hw/system/pad_ring.sv
+     file_type: systemVerilogSource
+ 
+-
+   ext_bus:
+     depend:
+     - x-heep::packages
+@@ -36,7 +35,6 @@ filesets:
+     - hw/vendor/esl_epfl_x_heep/tb/ext_xbar.sv
+     file_type: systemVerilogSource
+ 
+-
+   tb-harness:
+     files:
+     - tb/tb_util.svh: {is_include_file: true}
+@@ -118,10 +116,12 @@ filesets:
+ 
+   ip-fpga-pynq-z2:
+     files:
++    - hw/fpga/scripts/pynq-z2/set_board.tcl: { file_type: tclSource }
+     - hw/fpga/scripts/pynq-z2/xilinx_generate_clk_wizard.tcl:  { file_type: tclSource }
+ 
+   ip-fpga-zcu104:
+     files:
++    - hw/fpga/scripts/zcu104/set_board.tcl: { file_type: tclSource }
+     - hw/fpga/scripts/zcu104/xilinx_generate_clk_wizard.tcl:  { file_type: tclSource }
+ 
+   fpga-arm-emulation:
+@@ -136,9 +136,9 @@ filesets:
+ 
+   xdc-fpga-pynq-z2:
+     files:
+-    - hw/fpga_cgra/constraints/pynq-z2/pin_assign.xdc
++    - hw/fpga/constraints/pynq-z2/pin_assign.xdc
+     file_type: xdc
+-  
++
+   xdc-fpga-zcu104:
+     files:
+     - hw/fpga/constraints/zcu104/pin_assign.xdc
+@@ -311,7 +311,8 @@ targets:
+     parameters:
+     - COREV_PULP=0
+     - SYNTHESIS=true
++    - FPGA_ZCU104=true
+     tools:
+       vivado:
+         part: xczu7ev-ffvc1156-2-e
+-    toplevel: [xilinx_cgra_x_heep_wrapper]
+\ No newline at end of file
++    toplevel: [xilinx_cgra_x_heep_wrapper]
+diff --git a/hw/fpga_cgra/constraints/pynq-z2/pin_assign.xdc b/hw/fpga_cgra/constraints/pynq-z2/pin_assign.xdc
+deleted file mode 100644
+index 1520b0d..0000000
+--- a/hw/fpga_cgra/constraints/pynq-z2/pin_assign.xdc
++++ /dev/null
+@@ -1,95 +0,0 @@
+-# Copyright 2022 EPFL
+-# Solderpad Hardware License, Version 2.1, see LICENSE.md for details.
+-# SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
+-
+-# Clock signal
+-set_property -dict {PACKAGE_PIN H16 IOSTANDARD LVCMOS33} [get_ports clk_i]
+-
+-set_property -dict {PACKAGE_PIN L19 IOSTANDARD LVCMOS33} [get_ports rst_i]
+-
+-# LEDs
+-set_property -dict {PACKAGE_PIN M14 IOSTANDARD LVCMOS33} [get_ports rst_led]
+-set_property -dict {PACKAGE_PIN N16 IOSTANDARD LVCMOS33} [get_ports clk_led]
+-set_property -dict {PACKAGE_PIN W9 IOSTANDARD LVCMOS33} [get_ports clk_out]
+-
+-#Switches
+-set_property -dict {PACKAGE_PIN M19 IOSTANDARD LVCMOS33} [get_ports execute_from_flash_i]
+-set_property -dict {PACKAGE_PIN M20 IOSTANDARD LVCMOS33} [get_ports boot_select_i]
+-
+-# FLASH
+-# QSPI
+-# Q0 / MOSI
+-# Q1 / MISO
+-# Q2 / nWP
+-# Q3 / nHLD
+-set_property -dict {PACKAGE_PIN U18 IOSTANDARD LVCMOS33} [get_ports spi_flash_csb_o] # Pmoda[4]
+-set_property -dict {PACKAGE_PIN Y18 IOSTANDARD LVCMOS33} [get_ports spi_flash_sck_o] # Pmoda[0]
+-set_property -dict {PACKAGE_PIN U19 IOSTANDARD LVCMOS33} [get_ports {spi_flash_sd_io[0]}] # Pmoda[5]
+-set_property -dict {PACKAGE_PIN Y19 IOSTANDARD LVCMOS33} [get_ports {spi_flash_sd_io[1]}] # Pmoda[1]
+-set_property -dict {PACKAGE_PIN W18 IOSTANDARD LVCMOS33} [get_ports {spi_flash_sd_io[2]}] # Pmoda[6]
+-set_property -dict {PACKAGE_PIN Y16 IOSTANDARD LVCMOS33} [get_ports {spi_flash_sd_io[3]}] # Pmoda[2]
+-
+-# UART
+-set_property -dict {PACKAGE_PIN W14 IOSTANDARD LVCMOS33} [get_ports uart_tx_o] # Pmodb[0]
+-set_property -dict {PACKAGE_PIN V16 IOSTANDARD LVCMOS33} [get_ports uart_rx_i] # Pmodb[4]
+-
+-#JTAG
+-## Pmoda
+-## RPi GPIO 7-0 are shared with pmoda_rpi_gpio_tri_io[7:0]
+-
+-## Pmodb
+-set_property -dict {PACKAGE_PIN Y14 IOSTANDARD LVCMOS33} [get_ports jtag_tdi_i] # Pmob[1]
+-set_property -dict {PACKAGE_PIN V12 IOSTANDARD LVCMOS33} [get_ports jtag_tdo_o] # Pmodb[6]
+-set_property -dict {PACKAGE_PIN T11 IOSTANDARD LVCMOS33} [get_ports jtag_tms_i] # Pmodb[2]
+-set_property -dict {PACKAGE_PIN W16 IOSTANDARD LVCMOS33} [get_ports jtag_tck_i] # Pmodb[5]
+-set_property -dict {PACKAGE_PIN W19 IOSTANDARD LVCMOS33} [get_ports jtag_trst_ni] # Pmoda[7]
+-
+-# I2C
+-set_property -dict {PACKAGE_PIN W13 IOSTANDARD LVCMOS33} [get_ports {i2c_scl_io}] # Pmodb[7]
+-set_property -dict {PACKAGE_PIN T10 IOSTANDARD LVCMOS33} [get_ports {i2c_sda_io}] # Pmodb[3]
+-
+-# SPI SD
+-set_property -dict {PACKAGE_PIN F16 IOSTANDARD LVCMOS33} [get_ports spi_csb_o] # arduino_direct_spi_ss_io
+-set_property -dict {PACKAGE_PIN H15 IOSTANDARD LVCMOS33} [get_ports spi_sck_o] # arduino_direct_spi_sck_io
+-set_property -dict {PACKAGE_PIN T12 IOSTANDARD LVCMOS33} [get_ports {spi_sd_io[0]}] # arduino_direct_spi_io0_io
+-set_property -dict {PACKAGE_PIN W15 IOSTANDARD LVCMOS33} [get_ports {spi_sd_io[1]}] # arduino_direct_spi_io1_io
+-set_property -dict {PACKAGE_PIN P18 IOSTANDARD LVCMOS33} [get_ports {spi_sd_io[2]}] # arduino_gpio_tri_io[12]
+-set_property -dict {PACKAGE_PIN N17 IOSTANDARD LVCMOS33} [get_ports {spi_sd_io[3]}] # arduino_gpio_tri_io[13]
+-
+-# GPIOs
+-set_property -dict {PACKAGE_PIN T14 IOSTANDARD LVCMOS33} [get_ports {gpio_io[0]}] # arduino_gpio_tri_io[0]
+-set_property -dict {PACKAGE_PIN Y8 IOSTANDARD LVCMOS33} [get_ports {gpio_io[1]}] # rpi_gpio_tri_io[11]
+-set_property -dict {PACKAGE_PIN W8 IOSTANDARD LVCMOS33} [get_ports {gpio_io[2]}] # rpi_gpio_tri_io[5]
+-set_property -dict {PACKAGE_PIN Y7 IOSTANDARD LVCMOS33} [get_ports {gpio_io[3]}] # rpi_gpio_tri_io[16]
+-set_property -dict {PACKAGE_PIN Y6 IOSTANDARD LVCMOS33} [get_ports {gpio_io[4]}] # rpi_gpio_tri_io[7]
+-set_property -dict {PACKAGE_PIN U12 IOSTANDARD LVCMOS33} [get_ports {gpio_io[5]}] # arduino_gpio_tri_io[1]
+-set_property -dict {PACKAGE_PIN W10 IOSTANDARD LVCMOS33} [get_ports {gpio_io[6]}] # rpi_gpio_tri_io[3]
+-set_property -dict {PACKAGE_PIN V10 IOSTANDARD LVCMOS33} [get_ports {gpio_io[7]}] # rpi_gpio_tri_io[1]
+-set_property -dict {PACKAGE_PIN V8 IOSTANDARD LVCMOS33} [get_ports {gpio_io[8]}] # rpi_gpio_tri_io[2]
+-set_property -dict {PACKAGE_PIN U8 IOSTANDARD LVCMOS33} [get_ports {gpio_io[9]}] # rpi_gpio_tri_io[14]
+-set_property -dict {PACKAGE_PIN V7 IOSTANDARD LVCMOS33} [get_ports {gpio_io[10]}] # rpi_gpio_tri_io[19]
+-set_property -dict {PACKAGE_PIN U7 IOSTANDARD LVCMOS33} [get_ports {gpio_io[11]}] # rpi_gpio_tri_io[9]
+-set_property -dict {PACKAGE_PIN V6 IOSTANDARD LVCMOS33} [get_ports {gpio_io[12]}] # rpi_gpio_tri_io[6]
+-set_property -dict {PACKAGE_PIN U13 IOSTANDARD LVCMOS33} [get_ports {gpio_io[13]}] # arduino_gpio_tri_io[2]
+-set_property -dict {PACKAGE_PIN V13 IOSTANDARD LVCMOS33} [get_ports {gpio_io[14]}] # arduino_gpio_tri_io[3]
+-set_property -dict {PACKAGE_PIN Y9 IOSTANDARD LVCMOS33} [get_ports {gpio_io[15]}]
+-set_property -dict {PACKAGE_PIN A20 IOSTANDARD LVCMOS33} [get_ports {gpio_io[16]}]
+-set_property -dict {PACKAGE_PIN B19 IOSTANDARD LVCMOS33} [get_ports {gpio_io[17]}]
+-set_property -dict {PACKAGE_PIN B20 IOSTANDARD LVCMOS33} [get_ports {gpio_io[18]}]
+-set_property -dict {PACKAGE_PIN P15 IOSTANDARD LVCMOS33} [get_ports {gpio_io[19]}]
+-## Tri-color LD5 for TARGET_PYNQ_Z2
+-set_property -dict {PACKAGE_PIN M15 IOSTANDARD LVCMOS33} [get_ports {gpio_io[20]}]
+-set_property -dict {PACKAGE_PIN G14 IOSTANDARD LVCMOS33} [get_ports {gpio_io[21]}]
+-set_property -dict {PACKAGE_PIN L14 IOSTANDARD LVCMOS33} [get_ports {gpio_io[22]}]
+-
+-set_property -dict {PACKAGE_PIN R14 IOSTANDARD LVCMOS33} [get_ports exit_valid_o]
+-set_property -dict {PACKAGE_PIN P14 IOSTANDARD LVCMOS33} [get_ports exit_value_o]
+-
+-# SPI2
+-set_property -dict {PACKAGE_PIN W6 IOSTANDARD LVCMOS33} [get_ports {spi2_csb_o[0]}] # rpi_gpio_tri_io[15]
+-set_property -dict {PACKAGE_PIN T15 IOSTANDARD LVCMOS33} [get_ports {spi2_csb_o[1]}] # arduino_gpio_tri_io[5]
+-set_property -dict {PACKAGE_PIN C20 IOSTANDARD LVCMOS33} [get_ports {spi2_sck_o}] # rpi_gpio_tri_io[10]
+-set_property -dict {PACKAGE_PIN V17 IOSTANDARD LVCMOS33} [get_ports {spi2_sd_io[0]}] # arduino__gpio_tri_io[8]
+-set_property -dict {PACKAGE_PIN V18 IOSTANDARD LVCMOS33} [get_ports {spi2_sd_io[1]}] # arduino_gpio_tri_io[9]
+-set_property -dict {PACKAGE_PIN T16 IOSTANDARD LVCMOS33} [get_ports {spi2_sd_io[2]}] # arduino_gpio_tri_io[10]
+-set_property -dict {PACKAGE_PIN R17 IOSTANDARD LVCMOS33} [get_ports {spi2_sd_io[3]}] # arduino_gpio_tri_io[11]
+diff --git a/hw/fpga_cgra/xilinx_cgra_x_heep_wrapper.sv b/hw/fpga_cgra/xilinx_cgra_x_heep_wrapper.sv
+index ca4f6ab..a90f260 100644
+--- a/hw/fpga_cgra/xilinx_cgra_x_heep_wrapper.sv
++++ b/hw/fpga_cgra/xilinx_cgra_x_heep_wrapper.sv
+@@ -6,54 +6,63 @@ module xilinx_cgra_x_heep_wrapper
+   import obi_pkg::*;
+   import reg_pkg::*;
+ #(
+-    parameter COREV_PULP    = 0,
+-    parameter FPU           = 0,
+-    parameter ZFINX    = 0,
++    parameter COREV_PULP           = 0,
++    parameter FPU                  = 0,
++    parameter ZFINX                = 0,
++    parameter X_EXT                = 0,  // eXtension interface in cv32e40x
+     parameter CLK_LED_COUNT_LENGTH = 27
+ ) (
+-    inout logic         clk_i,
+-    inout logic         rst_i,
+ 
+-    //visibility signals
+-    output logic        rst_led,
+-    output logic        clk_led,
+-    output logic        clk_out,
++`ifdef FPGA_ZCU104
++  inout logic clk_300mhz_n,
++  inout logic clk_300mhz_p,
++`else
++  inout logic clk_i,
++`endif
++  inout logic rst_i,
+ 
+-    inout logic         boot_select_i,
+-    inout logic         execute_from_flash_i,
++  output logic rst_led_o,
++  output logic clk_led_o,
+ 
+-    inout  logic        jtag_tck_i,
+-    inout  logic        jtag_tms_i,
+-    inout  logic        jtag_trst_ni,
+-    inout  logic        jtag_tdi_i,
+-    inout  logic        jtag_tdo_o,
++  inout logic boot_select_i,
++  inout logic execute_from_flash_i,
+ 
+-    inout               uart_rx_i,
+-    inout               uart_tx_o,
++  inout logic jtag_tck_i,
++  inout logic jtag_tms_i,
++  inout logic jtag_trst_ni,
++  inout logic jtag_tdi_i,
++  inout logic jtag_tdo_o,
+ 
+-    inout  logic [22:0] gpio_io,
++  inout logic uart_rx_i,
++  inout logic uart_tx_o,
+ 
+-    output logic        exit_value_o,
+-    inout  logic        exit_valid_o,
++  inout logic [17:0] gpio_io,
+ 
+-    inout  logic [ 3:0] spi_flash_sd_io,
+-    inout  logic        spi_flash_csb_o,
+-    inout  logic        spi_flash_sck_o,
++  output logic exit_value_o,
++  inout  logic exit_valid_o,
+ 
+-    inout  logic [ 3:0] spi_sd_io,
+-    inout  logic        spi_csb_o,
+-    inout  logic        spi_sck_o,
++  inout logic [3:0] spi_flash_sd_io,
++  inout logic spi_flash_csb_o,
++  inout logic spi_flash_sck_o,
+ 
+-    inout logic         spi2_sd_0_io,
+-    inout logic         spi2_sd_1_io,
+-    inout logic         spi2_sd_2_io,
+-    inout logic         spi2_sd_3_io,
+-    inout logic [1:0]   spi2_csb_io,
+-    inout logic         spi2_sck_o,
++  inout logic [3:0] spi_sd_io,
++  inout logic spi_csb_o,
++  inout logic spi_sck_o,
+ 
++  inout logic [3:0] spi2_sd_io,
++  inout logic [1:0] spi2_csb_o,
++  inout logic spi2_sck_o,
++
++  inout logic i2c_scl_io,
++  inout logic i2c_sda_io,
++
++  inout logic pdm2pcm_clk_io,
++  inout logic pdm2pcm_pdm_io,
++
++  inout logic i2s_sck_io,
++  inout logic i2s_ws_io,
++  inout logic i2s_sd_io
+ 
+-    inout logic         i2c_scl_io,
+-    inout logic         i2c_sda_io
+ );
+ 
+   wire                               clk_gen;
+@@ -62,13 +71,17 @@ module xilinx_cgra_x_heep_wrapper
+   logic [CLK_LED_COUNT_LENGTH - 1:0] clk_count;
+ 
+   // low active reset
+-  assign rst_n   = !rst_i;
++`ifdef FPGA_NEXYS
++  assign rst_n = rst_i;
++`else
++  assign rst_n = !rst_i;
++`endif
+ 
+   // reset LED for debugging
+-  assign rst_led = rst_n;
+-  
++  assign rst_led_o = rst_n;
++
+   // counter to blink an LED
+-  assign clk_led = clk_count[CLK_LED_COUNT_LENGTH-1];
++  assign clk_led_o = clk_count[CLK_LED_COUNT_LENGTH-1];
+ 
+   always_ff @(posedge clk_gen or negedge rst_n) begin : clk_count_process
+     if (!rst_n) begin
+@@ -81,47 +94,56 @@ module xilinx_cgra_x_heep_wrapper
+   // eXtension Interface
+   if_xif #() ext_if ();
+ 
+-  // clock output for debugging
+-  assign clk_out = clk_gen;
+-
++`ifdef FPGA_ZCU104
++  xilinx_clk_wizard_wrapper xilinx_clk_wizard_wrapper_i (
++    .CLK_IN1_D_0_clk_n(clk_300mhz_n),
++    .CLK_IN1_D_0_clk_p(clk_300mhz_p),
++    .clk_out1_0(clk_gen)
++  );
++`elsif FPGA_NEXYS
++  xilinx_clk_wizard_wrapper xilinx_clk_wizard_wrapper_i (
++    .clk_100MHz(clk_i),
++    .clk_out1_0(clk_gen)
++  );
++`else  // FPGA PYNQ-Z2
+   xilinx_clk_wizard_wrapper xilinx_clk_wizard_wrapper_i (
+-      .clk_125MHz(clk_i),
+-      .clk_out1_0(clk_gen)
++    .clk_125MHz(clk_i),
++    .clk_out1_0(clk_gen)
+   );
++`endif
+ 
+   cgra_x_heep_top #(
+-        .COREV_PULP (0),
+-        .FPU        (0),
+-        .ZFINX (0)
+-      ) cgra_x_heep_top_i (
+-        .clk_i(clk_gen),
+-        .rst_ni(rst_n),
+-        .boot_select_i,
+-        .execute_from_flash_i,
+-        .jtag_tck_i,
+-        .jtag_tms_i,
+-        .jtag_trst_ni,
+-        .jtag_tdi_i,
+-        .jtag_tdo_o,
+-        .uart_rx_i,
+-        .uart_tx_o,
+-        .gpio_io,
+-        .exit_value_o(exit_value),
+-        .exit_valid_o,
+-        .spi_flash_sd_io,
+-        .spi_flash_csb_o,
+-        .spi_flash_sck_o,
+-        .spi_sd_io,
+-        .spi_csb_o,
+-        .spi_sck_o,
+-        .spi2_sd_0_io,
+-        .spi2_sd_1_io,
+-        .spi2_sd_2_io,
+-        .spi2_sd_3_io,
+-        .spi2_csb_io,
+-        .spi2_sck_o,
+-        .i2c_scl_io,
+-        .i2c_sda_io
++  ) cgra_x_heep_top_i (
++    .clk_i(clk_gen),
++    .rst_ni(rst_n),
++    .boot_select_i,
++    .execute_from_flash_i,
++    .jtag_tck_i,
++    .jtag_tms_i,
++    .jtag_trst_ni,
++    .jtag_tdi_i,
++    .jtag_tdo_o,
++    .uart_rx_i,
++    .uart_tx_o,
++    .gpio_io,
++    .exit_value_o,
++    .exit_valid_o,
++    .spi_flash_sd_io,
++    .spi_flash_csb_o,
++    .spi_flash_sck_o,
++    .spi_sd_io,
++    .spi_csb_o,
++    .spi_sck_o,
++    .spi2_sd_io,
++    .spi2_csb_o,
++    .spi2_sck_o,
++    .i2c_scl_io,
++    .i2c_sda_io,
++    .pdm2pcm_clk_io,
++    .pdm2pcm_pdm_io,
++    .i2s_sck_io,
++    .i2s_ws_io,
++    .i2s_sd_io
+   );
+ 
+   assign exit_value_o = exit_value[0];
+diff --git a/hw/rtl/cgra_x_heep_top.sv b/hw/rtl/cgra_x_heep_top.sv
+index c74712a..f8e6d6e 100644
+--- a/hw/rtl/cgra_x_heep_top.sv
++++ b/hw/rtl/cgra_x_heep_top.sv
+@@ -3,47 +3,51 @@
+ // SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
+ 
+ module cgra_x_heep_top #(
+-    parameter COREV_PULP = 0,
+-    parameter FPU        = 0,
+-    parameter ZFINX      = 0
++  parameter COREV_PULP = 0,
++  parameter FPU        = 0,
++  parameter ZFINX      = 0
+ ) (
+-    inout logic clk_i,
+-    inout logic rst_ni,
++  inout logic clk_i,
++  inout logic rst_ni,
+ 
+-    inout logic boot_select_i,
+-    inout logic execute_from_flash_i,
++  inout logic boot_select_i,
++  inout logic execute_from_flash_i,
+ 
+-    inout logic jtag_tck_i,
+-    inout logic jtag_tms_i,
+-    inout logic jtag_trst_ni,
+-    inout logic jtag_tdi_i,
+-    inout logic jtag_tdo_o,
++  inout logic jtag_tck_i,
++  inout logic jtag_tms_i,
++  inout logic jtag_trst_ni,
++  inout logic jtag_tdi_i,
++  inout logic jtag_tdo_o,
+ 
+-    inout uart_rx_i,
+-    inout uart_tx_o,
++  inout uart_rx_i,
++  inout uart_tx_o,
+ 
+-    inout logic [22:0] gpio_io,
++  inout logic [22:0] gpio_io,
+ 
+-    output logic [31:0] exit_value_o,
+-    inout  logic        exit_valid_o,
++  output logic [31:0] exit_value_o,
++  inout  logic        exit_valid_o,
+ 
+-    inout logic [3:0] spi_flash_sd_io,
+-    inout logic       spi_flash_csb_o,
+-    inout logic       spi_flash_sck_o,
++  inout logic [3:0] spi_flash_sd_io,
++  inout logic       spi_flash_csb_o,
++  inout logic       spi_flash_sck_o,
+ 
+-    inout logic [3:0] spi_sd_io,
+-    inout logic       spi_csb_o,
+-    inout logic       spi_sck_o,
++  inout logic [3:0] spi_sd_io,
++  inout logic       spi_csb_o,
++  inout logic       spi_sck_o,
+ 
+-    inout logic       spi2_sd_0_io,
+-    inout logic       spi2_sd_1_io,
+-    inout logic       spi2_sd_2_io,
+-    inout logic       spi2_sd_3_io,
+-    inout logic [1:0] spi2_csb_io,
+-    inout logic       spi2_sck_o,
++  inout logic [3:0] spi2_sd_io,
++  inout logic [1:0] spi2_csb_o,
++  inout logic       spi2_sck_o,
+ 
+-    inout logic i2c_scl_io,
+-    inout logic i2c_sda_io
++  inout logic i2c_scl_io,
++  inout logic i2c_sda_io,
++
++  inout logic pdm2pcm_clk_io,
++  inout logic pdm2pcm_pdm_io,
++
++  inout logic i2s_sck_io,
++  inout logic i2s_ws_io,
++  inout logic i2s_sd_io
+ );
+ 
+   import obi_pkg::*;
+@@ -72,8 +76,6 @@ module cgra_x_heep_top #(
+   obi_req_t heep_dma_addr_ch0_req;
+   obi_resp_t heep_dma_addr_ch0_resp;
+ 
+-
+-
+   // External interrupts
+   logic [core_v_mini_mcu_pkg::NEXT_INT-1:0] ext_intr_vector;
+ 
+@@ -85,6 +87,7 @@ module cgra_x_heep_top #(
+   // External subsystems
+   logic external_subsystem_rst_n;
+   logic external_ram_banks_set_retentive;
++
+   /* verilator lint_off unused */
+   logic external_subsystem_clkgate_en_n;
+   logic external_subsystem_powergate_switch;
+@@ -105,159 +108,158 @@ module cgra_x_heep_top #(
+     ext_intr_vector[0] = cgra_int;
+   end
+ 
+-
+   // External bus
+   // ----------------------
+   // The external bus connects the external peripherals among them and to
+   // the corresponding X-HEEP slave port (to the internal system bus).
+   ext_bus #(
+-      .EXT_XBAR_NMASTER(CGRA_XBAR_NMASTER),
+-      .EXT_XBAR_NSLAVE (1)
++    .EXT_XBAR_NMASTER(CGRA_XBAR_NMASTER),
++    .EXT_XBAR_NSLAVE (1)
+   ) ext_bus_i (
+-      .clk_i                    (clk_i),
+-      .rst_ni                   (rst_ni),
+-      .addr_map_i               (EXT_XBAR_ADDR_RULES),
+-      .default_idx_i            ('0),
+-
+-      .heep_core_instr_req_i    (heep_core_instr_req),
+-      .heep_core_instr_resp_o   (heep_core_instr_resp),
+-      .heep_core_data_req_i     (heep_core_data_req),
+-      .heep_core_data_resp_o    (heep_core_data_resp),
+-      .heep_debug_master_req_i  (heep_debug_master_req),
+-      .heep_debug_master_resp_o (heep_debug_master_resp),
+-      .heep_dma_read_ch0_req_i  (heep_dma_read_ch0_req),
+-      .heep_dma_read_ch0_resp_o (heep_dma_read_ch0_resp),
+-      .heep_dma_write_ch0_req_i (heep_dma_write_ch0_req),
+-      .heep_dma_write_ch0_resp_o(heep_dma_write_ch0_resp),
+-      .heep_dma_addr_ch0_req_i  (heep_dma_addr_ch0_req),
+-      .heep_dma_addr_ch0_resp_o (heep_dma_addr_ch0_resp),
+-
+-      .ext_master_req_i         (ext_master_req),
+-      .ext_master_resp_o        (ext_master_resp),
+-      .heep_slave_req_o         (heep_slave_req),
+-      .heep_slave_resp_i        (heep_slave_resp),
+-      .ext_slave_req_o          (ext_xbar_slave_req),
+-      .ext_slave_resp_i         (ext_xbar_slave_resp)
++    .clk_i                    (clk_i),
++    .rst_ni                   (rst_ni),
++    .addr_map_i               (EXT_XBAR_ADDR_RULES),
++    .default_idx_i            ('0),
++
++    .heep_core_instr_req_i    (heep_core_instr_req),
++    .heep_core_instr_resp_o   (heep_core_instr_resp),
++    .heep_core_data_req_i     (heep_core_data_req),
++    .heep_core_data_resp_o    (heep_core_data_resp),
++    .heep_debug_master_req_i  (heep_debug_master_req),
++    .heep_debug_master_resp_o (heep_debug_master_resp),
++    .heep_dma_read_ch0_req_i  (heep_dma_read_ch0_req),
++    .heep_dma_read_ch0_resp_o (heep_dma_read_ch0_resp),
++    .heep_dma_write_ch0_req_i (heep_dma_write_ch0_req),
++    .heep_dma_write_ch0_resp_o(heep_dma_write_ch0_resp),
++    .heep_dma_addr_ch0_req_i  (heep_dma_addr_ch0_req),
++    .heep_dma_addr_ch0_resp_o (heep_dma_addr_ch0_resp),
++
++    .ext_master_req_i         (ext_master_req),
++    .ext_master_resp_o        (ext_master_resp),
++    .heep_slave_req_o         (heep_slave_req),
++    .heep_slave_resp_i        (heep_slave_resp),
++    .ext_slave_req_o          (ext_xbar_slave_req),
++    .ext_slave_resp_i         (ext_xbar_slave_resp)
+   );
+ 
+   cgra_top_wrapper cgra_top_wrapper_i (
+-      .clk_i,
+-      .rst_ni,
+-      .cgra_enable_i(cgra_enable),
+-      .rst_logic_ni(cgra_logic_rst_n),
+-      .masters_req_o(ext_master_req),
+-      .masters_resp_i(ext_master_resp),
+-      .reg_req_i(ext_periph_slave_req),
+-      .reg_rsp_o(ext_periph_slave_resp),
+-      .slave_req_i(ext_xbar_slave_req),
+-      .slave_resp_o(ext_xbar_slave_resp),
+-      .cmem_set_retentive_i(cgra_ram_banks_set_retentive),
+-      .cgra_int_o(cgra_int)
++    .clk_i,
++    .rst_ni,
++    .cgra_enable_i(cgra_enable),
++    .rst_logic_ni(cgra_logic_rst_n),
++    .masters_req_o(ext_master_req),
++    .masters_resp_i(ext_master_resp),
++    .reg_req_i(ext_periph_slave_req),
++    .reg_rsp_o(ext_periph_slave_resp),
++    .slave_req_i(ext_xbar_slave_req),
++    .slave_resp_o(ext_xbar_slave_resp),
++    .cmem_set_retentive_i(cgra_ram_banks_set_retentive),
++    .cgra_int_o(cgra_int)
+   );
+ 
+   // eXtension Interface
+   if_xif #() ext_if ();
+ 
+   x_heep_system #(
+-      .COREV_PULP(COREV_PULP),
+-      .FPU(FPU),
+-      .ZFINX(ZFINX),
+-      .EXT_XBAR_NMASTER(CGRA_XBAR_NMASTER)
++    .COREV_PULP(COREV_PULP),
++    .FPU(FPU),
++    .ZFINX(ZFINX),
++    .EXT_XBAR_NMASTER(CGRA_XBAR_NMASTER)
+   ) x_heep_system_i (
+-      .clk_i,
+-      .rst_ni,
+-      .jtag_tck_i,
+-      .jtag_tms_i,
+-      .jtag_trst_ni,
+-      .jtag_tdi_i,
+-      .jtag_tdo_o,
+-      .boot_select_i,
+-      .execute_from_flash_i,
+-      .exit_valid_o,
+-      .uart_rx_i,
+-      .uart_tx_o,
+-      .gpio_0_io     (gpio_io[0]),
+-      .gpio_1_io     (gpio_io[1]),
+-      .gpio_2_io     (gpio_io[2]),
+-      .gpio_3_io     (gpio_io[3]),
+-      .gpio_4_io     (gpio_io[4]),
+-      .gpio_5_io     (gpio_io[5]),
+-      .gpio_6_io     (gpio_io[6]),
+-      .gpio_7_io     (gpio_io[7]),
+-      .gpio_8_io     (gpio_io[8]),
+-      .gpio_9_io     (gpio_io[9]),
+-      .gpio_10_io    (gpio_io[10]),
+-      .gpio_11_io    (gpio_io[11]),
+-      .gpio_12_io    (gpio_io[12]),
+-      .gpio_13_io    (gpio_io[13]),
+-      .gpio_14_io    (gpio_io[14]),
+-      .gpio_15_io    (gpio_io[15]),
+-      .gpio_16_io    (gpio_io[16]),
+-      .gpio_17_io    (gpio_io[17]),
+-      .pdm2pcm_pdm_io(gpio_io[18]),
+-      .pdm2pcm_clk_io(gpio_io[19]),
+-      .i2s_sck_io    (gpio_io[20]),
+-      .i2s_ws_io     (gpio_io[21]),
+-      .i2s_sd_io     (gpio_io[22]),
+-
+-      .spi2_cs_0_io(spi2_csb_io[0]),
+-      .spi2_cs_1_io(spi2_csb_io[1]),
+-      .spi2_sck_io (spi2_sck_o),
+-      .spi2_sd_0_io(spi2_sd_0_io),
+-      .spi2_sd_1_io(spi2_sd_1_io),
+-      .spi2_sd_2_io(spi2_sd_2_io),
+-      .spi2_sd_3_io(spi2_sd_3_io),
+-
+-      .i2c_sda_io(i2c_sda_io),
+-      .i2c_scl_io(i2c_scl_io),
+-
+-      .spi_flash_sck_io(spi_flash_sck_o),
+-      .spi_flash_cs_0_io(spi_flash_csb_o),
+-      .spi_flash_cs_1_io(),
+-      .spi_flash_sd_0_io(spi_flash_sd_io[0]),
+-      .spi_flash_sd_1_io(spi_flash_sd_io[1]),
+-      .spi_flash_sd_2_io(spi_flash_sd_io[2]),
+-      .spi_flash_sd_3_io(spi_flash_sd_io[3]),
+-      .spi_sck_io(spi_sck_o),
+-      .spi_cs_0_io(spi_csb_o),
+-      .spi_cs_1_io(),
+-      .spi_sd_0_io(spi_sd_io[0]),
+-      .spi_sd_1_io(spi_sd_io[1]),
+-      .spi_sd_2_io(spi_sd_io[2]),
+-      .spi_sd_3_io(spi_sd_io[3]),
+-
+-      .exit_value_o,
+-      .intr_vector_ext_i(ext_intr_vector),
+-      .xif_compressed_if(ext_if),
+-      .xif_issue_if(ext_if),
+-      .xif_commit_if(ext_if),
+-      .xif_mem_if(ext_if),
+-      .xif_mem_result_if(ext_if),
+-      .xif_result_if(ext_if),
+-
+-      .ext_xbar_master_req_i(heep_slave_req),
+-      .ext_xbar_master_resp_o(heep_slave_resp),
+-      .ext_core_instr_req_o(heep_core_instr_req),
+-      .ext_core_instr_resp_i(heep_core_instr_resp),
+-      .ext_core_data_req_o(heep_core_data_req),
+-      .ext_core_data_resp_i(heep_core_data_resp),
+-      .ext_debug_master_req_o(heep_debug_master_req),
+-      .ext_debug_master_resp_i(heep_debug_master_resp),
+-      .ext_dma_read_ch0_req_o(heep_dma_read_ch0_req),
+-      .ext_dma_read_ch0_resp_i(heep_dma_read_ch0_resp),
+-      .ext_dma_write_ch0_req_o(heep_dma_write_ch0_req),
+-      .ext_dma_write_ch0_resp_i(heep_dma_write_ch0_resp),
+-      .ext_dma_addr_ch0_req_o(heep_dma_addr_ch0_req),
+-      .ext_dma_addr_ch0_resp_i(heep_dma_addr_ch0_resp),
+-      .external_subsystem_clkgate_en_no(external_subsystem_clkgate_en_n),
+-      .ext_peripheral_slave_req_o(ext_periph_slave_req),
+-      .ext_peripheral_slave_resp_i(ext_periph_slave_resp),
+-      .external_subsystem_powergate_switch_no(external_subsystem_powergate_switch),
+-      .external_subsystem_powergate_switch_ack_ni(external_subsystem_powergate_switch_ack),
+-      .external_subsystem_powergate_iso_no(external_subsystem_powergate_iso),
+-
+-      .external_subsystem_rst_no(external_subsystem_rst_n),
+-      .external_ram_banks_set_retentive_no(external_ram_banks_set_retentive)
++    .clk_i,
++    .rst_ni,
++    .jtag_tck_i,
++    .jtag_tms_i,
++    .jtag_trst_ni,
++    .jtag_tdi_i,
++    .jtag_tdo_o,
++    .boot_select_i,
++    .execute_from_flash_i,
++    .exit_valid_o,
++    .uart_rx_i,
++    .uart_tx_o,
++    .gpio_0_io (gpio_io[0]),
++    .gpio_1_io (gpio_io[1]),
++    .gpio_2_io (gpio_io[2]),
++    .gpio_3_io (gpio_io[3]),
++    .gpio_4_io (gpio_io[4]),
++    .gpio_5_io (gpio_io[5]),
++    .gpio_6_io (gpio_io[6]),
++    .gpio_7_io (gpio_io[7]),
++    .gpio_8_io (gpio_io[8]),
++    .gpio_9_io (gpio_io[9]),
++    .gpio_10_io(gpio_io[10]),
++    .gpio_11_io(gpio_io[11]),
++    .gpio_12_io(gpio_io[12]),
++    .gpio_13_io(gpio_io[13]),
++    .gpio_14_io(gpio_io[14]),
++    .gpio_15_io(gpio_io[15]),
++    .gpio_16_io(gpio_io[16]),
++    .gpio_17_io(gpio_io[17]),
++    .pdm2pcm_pdm_io,
++    .pdm2pcm_clk_io,
++    .i2s_sck_io,
++    .i2s_ws_io,
++    .i2s_sd_io,
++
++    .spi2_sd_0_io(spi2_sd_io[0]),
++    .spi2_sd_1_io(spi2_sd_io[1]),
++    .spi2_sd_2_io(spi2_sd_io[2]),
++    .spi2_sd_3_io(spi2_sd_io[3]),
++    .spi2_cs_0_io(spi2_csb_o[0]),
++    .spi2_cs_1_io(spi2_csb_o[1]),
++    .spi2_sck_io(spi2_sck_o),
++
++    .i2c_sda_io(i2c_sda_io),
++    .i2c_scl_io(i2c_scl_io),
++
++    .spi_flash_sck_io(spi_flash_sck_o),
++    .spi_flash_cs_0_io(spi_flash_csb_o),
++    .spi_flash_cs_1_io(),
++    .spi_flash_sd_0_io(spi_flash_sd_io[0]),
++    .spi_flash_sd_1_io(spi_flash_sd_io[1]),
++    .spi_flash_sd_2_io(spi_flash_sd_io[2]),
++    .spi_flash_sd_3_io(spi_flash_sd_io[3]),
++    .spi_sck_io(spi_sck_o),
++    .spi_cs_0_io(spi_csb_o),
++    .spi_cs_1_io(),
++    .spi_sd_0_io(spi_sd_io[0]),
++    .spi_sd_1_io(spi_sd_io[1]),
++    .spi_sd_2_io(spi_sd_io[2]),
++    .spi_sd_3_io(spi_sd_io[3]),
++
++    .exit_value_o,
++    .intr_vector_ext_i(ext_intr_vector),
++    .xif_compressed_if(ext_if),
++    .xif_issue_if(ext_if),
++    .xif_commit_if(ext_if),
++    .xif_mem_if(ext_if),
++    .xif_mem_result_if(ext_if),
++    .xif_result_if(ext_if),
++
++    .ext_xbar_master_req_i(heep_slave_req),
++    .ext_xbar_master_resp_o(heep_slave_resp),
++    .ext_core_instr_req_o(heep_core_instr_req),
++    .ext_core_instr_resp_i(heep_core_instr_resp),
++    .ext_core_data_req_o(heep_core_data_req),
++    .ext_core_data_resp_i(heep_core_data_resp),
++    .ext_debug_master_req_o(heep_debug_master_req),
++    .ext_debug_master_resp_i(heep_debug_master_resp),
++    .ext_dma_read_ch0_req_o(heep_dma_read_ch0_req),
++    .ext_dma_read_ch0_resp_i(heep_dma_read_ch0_resp),
++    .ext_dma_write_ch0_req_o(heep_dma_write_ch0_req),
++    .ext_dma_write_ch0_resp_i(heep_dma_write_ch0_resp),
++    .ext_dma_addr_ch0_req_o(heep_dma_addr_ch0_req),
++    .ext_dma_addr_ch0_resp_i(heep_dma_addr_ch0_resp),
++    .external_subsystem_clkgate_en_no(external_subsystem_clkgate_en_n),
++    .ext_peripheral_slave_req_o(ext_periph_slave_req),
++    .ext_peripheral_slave_resp_i(ext_periph_slave_resp),
++    .external_subsystem_powergate_switch_no(external_subsystem_powergate_switch),
++    .external_subsystem_powergate_switch_ack_ni(external_subsystem_powergate_switch_ack),
++    .external_subsystem_powergate_iso_no(external_subsystem_powergate_iso),
++
++    .external_subsystem_rst_no(external_subsystem_rst_n),
++    .external_ram_banks_set_retentive_no(external_ram_banks_set_retentive)
+   );
+ 
+ endmodule  // cgra_x_heep_pkg
+diff --git a/vivado.jou b/vivado.jou
+deleted file mode 100644
+index 088c90b..0000000
+--- a/vivado.jou
++++ /dev/null
+@@ -1,15 +0,0 @@
+-#-----------------------------------------------------------
+-# Vivado v2022.1 (64-bit)
+-# SW Build 3526262 on Mon Apr 18 15:47:01 MDT 2022
+-# IP Build 3524634 on Mon Apr 18 20:55:01 MDT 2022
+-# Start of session at: Fri Dec 15 15:45:07 2023
+-# Process ID: 113980
+-# Current directory: /home/mbelda/epfl/my_cgra/HEEPsilon
+-# Command line: vivado
+-# Log file: /home/mbelda/epfl/my_cgra/HEEPsilon/vivado.log
+-# Journal file: /home/mbelda/epfl/my_cgra/HEEPsilon/vivado.jou
+-# Running On: mbelda, OS: Linux, CPU Frequency: 2000.000 MHz, CPU Physical cores: 4, Host memory: 16453 MB
+-#-----------------------------------------------------------
+-start_gui
+-open_project /home/mbelda/epfl/my_cgra/HEEPsilon/build/eslepfl_systems_cgra-x-heep_0/pynq-z2-vivado/eslepfl_systems_cgra-x-heep_0.xpr
+-open_run impl_1

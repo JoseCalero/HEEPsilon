@@ -27,7 +27,6 @@ filesets:
     - hw/vendor/esl_epfl_x_heep/hw/system/pad_ring.sv
     file_type: systemVerilogSource
 
-
   ext_bus:
     depend:
     - x-heep::packages
@@ -35,7 +34,6 @@ filesets:
     - hw/vendor/esl_epfl_x_heep/tb/ext_bus.sv
     - hw/vendor/esl_epfl_x_heep/tb/ext_xbar.sv
     file_type: systemVerilogSource
-
 
   tb-harness:
     files:
@@ -118,10 +116,12 @@ filesets:
 
   ip-fpga-pynq-z2:
     files:
+    - hw/fpga/scripts/pynq-z2/set_board.tcl: { file_type: tclSource }
     - hw/fpga/scripts/pynq-z2/xilinx_generate_clk_wizard.tcl:  { file_type: tclSource }
 
   ip-fpga-zcu104:
     files:
+    - hw/fpga/scripts/zcu104/set_board.tcl: { file_type: tclSource }
     - hw/fpga/scripts/zcu104/xilinx_generate_clk_wizard.tcl:  { file_type: tclSource }
 
   fpga-arm-emulation:
@@ -136,9 +136,9 @@ filesets:
 
   xdc-fpga-pynq-z2:
     files:
-    - hw/fpga_cgra/constraints/pynq-z2/pin_assign.xdc
+    - hw/fpga/constraints/pynq-z2/pin_assign.xdc
     file_type: xdc
-  
+
   xdc-fpga-zcu104:
     files:
     - hw/fpga/constraints/zcu104/pin_assign.xdc
@@ -311,6 +311,7 @@ targets:
     parameters:
     - COREV_PULP=0
     - SYNTHESIS=true
+    - FPGA_ZCU104=true
     tools:
       vivado:
         part: xczu7ev-ffvc1156-2-e
