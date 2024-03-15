@@ -129,16 +129,6 @@ filesets:
     - hw/fpga/scripts/zcu104/set_board.tcl: { file_type: tclSource }
     - hw/fpga/scripts/zcu104/xilinx_generate_clk_wizard.tcl:  { file_type: tclSource }
 
-  fpga-arm-emulation:
-    depend:
-    - pulp-platform.org::axi_spi_slave
-    files:
-    - linux_femu/scripts/xilinx_generate_processing_system.tcl: {file_type: tclSource}
-    - linux_femu/rtl/axi_address_hijacker.v: {file_type: verilogSource}
-    - linux_femu/rtl/linux_femu.sv: {file_type: systemVerilogSource}
-    - linux_femu/constraints/pin_assign.xdc: {file_type: xdc}
-    - linux_femu/constraints/constraints.xdc: {file_type: xdc}
-
   ip-asic:
     depend:
     - technology::prim_mytech
@@ -213,6 +203,8 @@ filesets:
 
   tb-verilator:
     files:
+    - tb/XHEEP_CmdLineOptions.hh: { is_include_file: true }
+    - tb/XHEEP_CmdLineOptions.cpp
     - tb/tb_top.cpp
     file_type: cppSource
 
@@ -220,6 +212,14 @@ filesets:
     files:
     - tb/tb_top.sv
     file_type: systemVerilogSource
+
+  tb-sc-verilator:
+    files:
+    - tb/XHEEP_CmdLineOptions.hh: { is_include_file: true }
+    - tb/XHEEP_CmdLineOptions.cpp
+    - tb/tb_sc_top.cpp
+    file_type: cppSource
+
 
   openroad_base_files:
     files:
@@ -281,6 +281,10 @@ parameters:
     datatype: bool
     paramtype: vlogdefine
     default: false
+  SIM_SYSTEMC:
+    datatype: bool
+    paramtype: vlogdefine
+    default: false
   FPGA_NEXYS:
     datatype: bool
     paramtype: vlogdefine
@@ -325,6 +329,8 @@ targets:
     - files_rtl_generic
     - target_sim ? (rtl-simulation)
     - target_sim ? (tool_verilator? (files_verilator_waiver))
+    - target_sim_sc ? (rtl-simulation)
+    - target_sim_sc ? (tool_verilator? (files_verilator_waiver))
     toplevel: [core_v_mini_mcu]
 
   sim:
@@ -337,13 +343,17 @@ targets:
     - tool_modelsim? (pre_patch_modelsim_Makefile)
     - tool_vcs? (cfile_uartdpi)
     - tool_vcs? (pre_build_remote_bitbang)
+    - tool_xcelium? (pre_build_remote_bitbang)
+    - tool_xcelium? (pre_build_uartdpi)
     - tool_verilator? (tb-verilator)
     - tool_modelsim? (tb-sv)
     - tool_vcs? (tb-sv)
+    - tool_xcelium? (tb-sv)
     - "!integrated_heep? (x_heep_system)"
     toplevel:
     - tool_modelsim? (tb_top)
     - tool_vcs? (tb_top)
+    - tool_xcelium? (tb_top)
     - tool_verilator? (testharness)
     hooks:
       pre_build:
@@ -351,6 +361,8 @@ targets:
         - tool_modelsim? (pre_build_remote_bitbang)
         - tool_modelsim? (pre_patch_modelsim_Makefile) # this is required by Questa 2020 on
         - ams_sim? (pre_patch_vcs_ams_Makefile)
+        - tool_xcelium? (pre_build_uartdpi)
+        - tool_xcelium? (pre_build_remote_bitbang)
     parameters:
     - COREV_PULP
     - FPU
@@ -388,6 +400,12 @@ targets:
          - -LDFLAGS "-pthread -lutil"
          - +lint=TFIPC-L
          - -V
+      xcelium:
+        xrun_options:
+        - -vtimescale 1ns/10ps
+        - -sv_lib ../../../hw/vendor/lowrisc_opentitan/hw/dv/dpi/uartdpi/uartdpi.so
+        - -sv_lib ../../../hw/vendor/pulp_platform_pulpissimo/rtl/tb/remote_bitbang/librbs.so
+        - -define XCELIUM
       verilator:
         mode: cc
         verilator_options:
@@ -402,6 +420,40 @@ targets:
           - '--exe tb_top.cpp'
           - '-CFLAGS "-std=c++11 -Wall -g -fpermissive"'
           - '-LDFLAGS "-pthread -lutil -lelf"'
+          - "-Wall"
+
+  sim_sc:
+    <<: *default_target
+    default_tool: modelsim
+    filesets_append:
+    - tb-utils
+    - tool_verilator? (tb-sc-verilator)
+    - "!integrated_heep? (x_heep_system)"
+    toplevel:
+    - tool_verilator? (testharness)
+    parameters:
+    - COREV_PULP
+    - FPU
+    - JTAG_DPI
+    - X_EXT
+    - USE_EXTERNAL_DEVICE_EXAMPLE
+    - USE_UPF
+    - REMOVE_OBI_FIFO
+    - SIM_SYSTEMC=true
+    tools:
+      verilator:
+        mode: sc
+        verilator_options:
+          - '--sc'
+          - '--trace'
+          - '--trace-structs'
+          - '--trace-params'
+          - '--trace-max-array 1024'
+          - '--x-assign unique'
+          - '--x-initial unique'
+          - '--exe tb_sc_top.cpp'
+          - '-CFLAGS "-std=c++11 -Wall -g -fpermissive"'
+          - '-LDFLAGS "-pthread -lutil -lelf $(SYSTEMC_LIBDIR)/libsystemc.a"'
           - "-Wall"
 
   nexys-a7-100t:
@@ -468,28 +520,7 @@ targets:
       vivado:
         part: xczu7ev-ffvc1156-2-e
     toplevel: [xilinx_core_v_mini_mcu_wrapper]
-
-  pynq-z2-arm-emulation:
-    <<: *default_target
-    default_tool: vivado
-    description: TUL Pynq-Z2 Board
-    filesets_append:
-    - x_heep_system
-    - rtl-fpga
-    - ip-fpga
-    - fpga-arm-emulation
-    parameters:
-    - COREV_PULP
-    - FPU
-    - X_EXT
-    - SYNTHESIS=true
-    - REMOVE_OBI_FIFO
-    tools:
-      vivado:
-        part: xc7z020clg400-1
-        jobs: 4
-    toplevel: [linux_femu]
-
+    
   asic_synthesis:
     <<: *default_target
     default_tool: design_compiler
